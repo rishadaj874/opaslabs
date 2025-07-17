@@ -10,9 +10,8 @@ module.exports = async (req, res) => {
 
   try {
     const body = req.body;
-    console.log('📩 New message:', JSON.stringify(body));
-
     const message = body.message || body.edited_message;
+
     if (!message) {
       return res.status(200).send('No message found');
     }
@@ -20,18 +19,26 @@ module.exports = async (req, res) => {
     const chatId = message.chat.id;
     const text = message.text || '';
 
+    if (!text) {
+      await axios.post(`${TELEGRAM_API}/sendMessage`, {
+        chat_id: chatId,
+        text: `⚠️ Sorry, I can only understand text messages right now.`
+      });
+      return res.status(200).send('OK');
+    }
+
     if (text === '/start') {
       await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatId,
         text: `👋 Hello ${message.from.first_name || 'there'}!\nWelcome to Opas Labs! 🚀`
       });
-    } else {
-      await axios.post(`${TELEGRAM_API}/sendMessage`, {
-        chat_id: chatId,
-        text: `🤖 You said: ${text}`
-      });
+      return res.status(200).send('OK');
     }
 
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text: `🤖 You said: ${text}`
+    });
     return res.status(200).send('OK');
   } catch (err) {
     console.error('❌ Bot Error:', err.message);
