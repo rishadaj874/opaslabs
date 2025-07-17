@@ -1,35 +1,45 @@
 import axios from 'axios';
 
-const TELEGRAM_API = `https://api.telegram.org/bot${process.env.BOT_TOKEN_API}`;
-const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const BOT_TOKEN = '8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo';
+const ADMIN_CHAT_ID = '7216371031';
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(200).send('Bot is running...');
+    return res.status(200).send('🤖 Bot is up and running!');
   }
 
   try {
     const body = req.body;
 
-    // Check if this is a /start message
+    // Handle basic /start command
     if (body.message && body.message.text === '/start') {
       const chatId = body.message.chat.id;
-      const firstName = body.message.from.first_name || 'there';
-
-      const welcomeMessage = `👋 Hello ${firstName}! Welcome to Opas Labs Bot.`;
+      const userName = body.message.from.first_name || 'User';
 
       await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatId,
-        text: welcomeMessage,
+        text: `👋 Hello ${userName}, welcome to Opas Labs bot!`,
       });
 
-      return res.status(200).send('OK');
+      return res.status(200).send('Start message sent');
     }
 
-    // Handle other messages here if needed
-    return res.status(200).send('No action for this message');
-  } catch (error) {
-    console.error('❌ BOT ERROR:', error?.response?.data || error.message);
-    return res.status(500).send('Internal Server Error');
+    // Handle other messages (optional fallback)
+    if (body.message && body.message.text) {
+      const chatId = body.message.chat.id;
+
+      await axios.post(`${TELEGRAM_API}/sendMessage`, {
+        chat_id: chatId,
+        text: `🤖 I received your message: "${body.message.text}"`,
+      });
+
+      return res.status(200).send('Message echoed');
+    }
+
+    res.status(200).send('No action taken');
+  } catch (err) {
+    console.error('❌ Bot error:', err?.response?.data || err.message);
+    return res.status(500).send('Internal Bot Error');
   }
 }
