@@ -1,3 +1,4 @@
+// require('dotenv').config();
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 
