@@ -1,32 +1,33 @@
 const axios = require('axios');
 
-const BOT_TOKEN = '8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo';
+const BOT_TOKEN = '8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo'; // Replace with your token
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') {
-    return res.status(200).send('Bot is running');
+    return res.status(200).send('Opas Bot is Running 🚀');
   }
 
   try {
-    const body = req.body;
-    const message = body.message || body.edited_message;
+    const message = req.body.message || req.body.edited_message;
 
     if (!message) {
-      return res.status(200).send('No message found');
+      return res.status(200).send('No message to process');
     }
 
     const chatId = message.chat.id;
     const text = message.text || '';
 
+    // Fallback for non-text messages
     if (!text) {
       await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatId,
-        text: `⚠️ Sorry, I can only understand text messages right now.`
+        text: '⚠️ Please send a text message.'
       });
       return res.status(200).send('OK');
     }
 
+    // Reply to /start
     if (text === '/start') {
       await axios.post(`${TELEGRAM_API}/sendMessage`, {
         chat_id: chatId,
@@ -35,13 +36,15 @@ module.exports = async (req, res) => {
       return res.status(200).send('OK');
     }
 
+    // Reply to other messages
     await axios.post(`${TELEGRAM_API}/sendMessage`, {
       chat_id: chatId,
       text: `🤖 You said: ${text}`
     });
+
     return res.status(200).send('OK');
-  } catch (err) {
-    console.error('❌ Bot Error:', err.message);
-    return res.status(500).send('Bot Error');
+  } catch (error) {
+    console.error('❌ Bot Error:', error.message);
+    return res.status(500).send('Internal Server Error');
   }
 };
