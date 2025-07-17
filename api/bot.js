@@ -1,9 +1,13 @@
-// 🔐 Real credentials
-const TELEGRAM_BOT_TOKEN = '7740401254:AAHhnSMhm-dMcv7-4LJCGwHchxRrYhBEsCY';
-const ADMIN_CHAT_ID = '7216371031';
+import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+
+dotenv.config(); // Load .env
+
+const TELEGRAM_BOT_TOKEN = process.env.BOT_TOKEN_API;
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
-const policeRequests = new Map(); // stores verified status
+const policeRequests = new Map(); // stores verification state
 
 export default async function handler(req, res) {
   if (req.method === 'GET') return res.status(200).send('🟢 Bot is alive!');
@@ -17,13 +21,13 @@ export default async function handler(req, res) {
   const photo = message?.photo;
 
   try {
-    // ✅ /start
+    // /start
     if (text === '/start') {
       await sendWelcomeWithButtons(chatId);
       return res.status(200).send('OK');
     }
 
-    // 🛂 Police Enquiry Button
+    // Police Enquiry Button
     if (callbackQuery?.data === 'police') {
       await sendMessageNoMarkdown(
         callbackQuery.message.chat.id,
@@ -33,7 +37,7 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // 🎣 Let’s Fish Button — now working for admin with MarkdownV2 spoiler
+    // Fishing Button
     if (callbackQuery?.data === 'fishing') {
       const userId = callbackQuery.message.chat.id.toString();
       const isAdmin = userId === ADMIN_CHAT_ID;
@@ -53,7 +57,7 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // 📸 Photo Submission from Police
+    // Police ID photo
     if (photo && chatId.toString() !== ADMIN_CHAT_ID) {
       const fileId = photo[photo.length - 1].file_id;
       policeRequests.set(chatId, { verified: false });
@@ -82,7 +86,7 @@ export default async function handler(req, res) {
       return res.status(200).send('OK');
     }
 
-    // ✅ Admin Verifies or Denies
+    // Admin verifies or denies
     if (callbackQuery && callbackQuery.message.chat.id.toString() === ADMIN_CHAT_ID) {
       const data = callbackQuery.data;
 
@@ -117,7 +121,7 @@ export default async function handler(req, res) {
   }
 }
 
-// 🟢 Welcome screen with inline buttons + disclaimer note (quoted)
+// 🟢 Welcome with buttons
 async function sendWelcomeWithButtons(chatId) {
   await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
     method: 'POST',
@@ -137,7 +141,7 @@ async function sendWelcomeWithButtons(chatId) {
   });
 }
 
-// 📨 Text without formatting
+// 📨 Send plain text
 async function sendMessageNoMarkdown(chatId, message) {
   return fetch(`${TELEGRAM_API_URL}/sendMessage`, {
     method: 'POST',
@@ -146,7 +150,7 @@ async function sendMessageNoMarkdown(chatId, message) {
   });
 }
 
-// 🕵️ Send spoiler message (MarkdownV2)
+// 🕵️ Spoiler message (MarkdownV2)
 async function sendSpoilerMessage(chatId, message) {
   return fetch(`${TELEGRAM_API_URL}/sendMessage`, {
     method: 'POST',
@@ -159,7 +163,7 @@ async function sendSpoilerMessage(chatId, message) {
   });
 }
 
-// ✅ Callback button answer
+// ✅ Acknowledge button press
 async function answerCallback(callbackQueryId) {
   return fetch(`${TELEGRAM_API_URL}/answerCallbackQuery`, {
     method: 'POST',
