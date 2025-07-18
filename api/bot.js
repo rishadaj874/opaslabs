@@ -1,50 +1,26 @@
-const axios = require('axios');
+const TelegramBot = require('node-telegram-bot-api');
+const bot = new TelegramBot('8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo', { polling: true });
 
-const BOT_TOKEN = '8064189934:AAGeRa_SIje_gEq7frBtUSJ-NvL6coLLJdo'; // Replace with your token
-const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}`;
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
 
-module.exports = async (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(200).send('Opas Bot is Running 🚀');
-  }
+  const welcomeMessage = `👋 Hello ${msg.from.first_name || 'there'}!\n\n` +
+    `Welcome to our Telegram Bot 🤖\n` +
+    `I'm here to assist you with anything you need.\n\n` +
+    `✅ Use the menu or type a command to get started.\n` +
+    `📩 Need help? Just type /help anytime.\n\n` +
+    `Let's make things happen! 🚀`;
 
-  try {
-    const message = req.body.message || req.body.edited_message;
-
-    if (!message) {
-      return res.status(200).send('No message to process');
+  const options = {
+    reply_markup: {
+      keyboard: [
+        ['📜 Help', 'ℹ️ About'],
+        ['⚙️ Settings', '❓ FAQ']
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false
     }
+  };
 
-    const chatId = message.chat.id;
-    const text = message.text || '';
-
-    // Fallback for non-text messages
-    if (!text) {
-      await axios.post(`${TELEGRAM_API}/sendMessage`, {
-        chat_id: chatId,
-        text: '⚠️ Please send a text message.'
-      });
-      return res.status(200).send('OK');
-    }
-
-    // Reply to /start
-    if (text === '/start') {
-      await axios.post(`${TELEGRAM_API}/sendMessage`, {
-        chat_id: chatId,
-        text: `👋 Hello ${message.from.first_name || 'there'}!\nWelcome to Opas Labs! 🚀`
-      });
-      return res.status(200).send('OK');
-    }
-
-    // Reply to other messages
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text: `🤖 You said: ${text}`
-    });
-
-    return res.status(200).send('OK');
-  } catch (error) {
-    console.error('❌ Bot Error:', error.message);
-    return res.status(500).send('Internal Server Error');
-  }
-};
+  bot.sendMessage(chatId, welcomeMessage, options);
+});
